@@ -5,6 +5,7 @@
 import time
 
 from typing import Any, Dict, Tuple
+from urllib.parse import urlparse
 
 import requests
 
@@ -16,6 +17,7 @@ TTL = 600
 
 app = Flask(__name__)
 cache: Dict[Any, Tuple[Any, Any]] = {}
+tor_proxies = {"http": "socks5h://localhost:9050"}
 
 
 def cached(f: Any) -> Any:
@@ -31,16 +33,23 @@ def cached(f: Any) -> Any:
 
 
 @cached
+def http_request(method: str, url: str) -> requests.Response:
+    host = urlparse(url).hostname
+    tor = host and host.endswith(".onion")
+    proxies = tor_proxies if tor else {}
+    app.logger.info(f"{method} {url}{' (Tor)' if tor else ''}")
+    return requests.request(method, url, proxies=proxies, timeout=TIMEOUT)
+
+
 def timestamp(mirror: str, component: str) -> int:
-    r = requests.get(f"{mirror}/{component}/entry.json", timeout=TIMEOUT)
+    r = http_request("GET", f"{mirror}/{component}/entry.json")
     r.raise_for_status()
     ts: int = r.json()["timestamp"]
     return ts // 1000
 
 
-@cached
 def latest_apk(appid: str) -> str:
-    r = requests.get(f"{FDROID}/api/v1/packages/{appid}", timeout=TIMEOUT)
+    r = http_request("GET", f"{FDROID}/api/v1/packages/{appid}")
     r.raise_for_status()
     version = r.json()["suggestedVersionCode"]
     return f"{appid}_{version}.apk"
@@ -49,16 +58,16 @@ def latest_apk(appid: str) -> str:
 def mirror_uptodate(mirror: str, component: str) -> bool:
     fdroid_ts = timestamp(FDROID, component)
     mirror_ts = timestamp(mirror, component)
-    app.logger.info(f"f-droid [{component}] timestamp = {fdroid_ts}")
-    app.logger.info(f"{mirror} [{component}] timestamp = {mirror_ts}")
+    app.logger.info(f"ts={fdroid_ts} {FDROID} [{component}]")
+    app.logger.info(f"ts={mirror_ts} {mirror} [{component}]")
     return bool(mirror_ts == fdroid_ts)
 
 
 def mirror_has_apk(mirror: str, appid: str) -> bool:
     apk = latest_apk(appid)
-    r = requests.head(f"{mirror}/repo/{apk}", timeout=TIMEOUT)
-    app.logger.info(f"{mirror} [{apk}] status = {r.status_code}")
-    return r.status_code == 200
+    r = http_request("HEAD", f"{mirror}/repo/{apk}")
+    app.logger.info(f"status={r.status_code} {mirror} [{apk}]")
+    return bool(r.status_code == 200)
 
 
 def mirror_component() -> Tuple[str, str]:

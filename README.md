@@ -8,6 +8,12 @@
 
 check f-droid mirrors
 
+NB: this is essentially an open proxy service with no constraints on
+the URLs it accepts (so as to not depend on any list of mirrors that
+would need to be updated) or much input validation.  It is meant for
+local use (by Uptime Kuma monitors) in trusted environments only.  Do
+not expose it directly to the internet.
+
 ```sh
 $ SERVER=localhost:5000 MIRROR=https://ftp.fau.de/fdroid
 $ curl "$SERVER/latest-apk/org.fdroid.fdroid?mirror=$MIRROR"

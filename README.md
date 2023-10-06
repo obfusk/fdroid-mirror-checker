@@ -31,6 +31,7 @@ $ curl "$SERVER/timestamp?mirror=$MIRROR&component=archive"
     - gunicorn
     - python3-flask
     - python3-requests
+    - python3-socks
 
 - name: "git: clone fdroid-mirror-checker"
   ansible.builtin.git:

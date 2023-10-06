@@ -1,0 +1,8 @@
+[Unit]
+Description=check f-droid mirrors
+Wants=network-online.target
+After=network.target network-online.target
+
+[Service]
+DynamicUser=yes
+ExecStart=/path/to/run.sh

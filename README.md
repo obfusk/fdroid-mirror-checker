@@ -11,17 +11,11 @@ check f-droid mirrors
 ```sh
 $ SERVER=localhost:5000 MIRROR=https://ftp.fau.de/fdroid
 $ curl "$SERVER/latest-apk/org.fdroid.fdroid?mirror=$MIRROR"
-{
-  "status": "up-to-date"
-}
+{"status": "up-to-date"}
 $ curl "$SERVER/timestamp?mirror=$MIRROR"
-{
-  "status": "up-to-date"
-}
+{"status": "up-to-date"}
 $ curl "$SERVER/timestamp?mirror=$MIRROR&component=archive"
-{
-  "status": "up-to-date"
-}
+{"status": "up-to-date"}
 ```
 
 ## License
